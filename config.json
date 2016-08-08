@@ -1,0 +1,12 @@
+{
+  "backend": "consul",
+  "scheme": "https",
+  "address": "192.168.99.100:8501",
+  "token": "a49e7360-f150-463a-9a29-3eb186ffae1a",
+  "ca_file": "ssl/ca.crt",
+  "cert_file": "ssl/consul_client.crt",
+  "key_file": "ssl/consul_client.key",
+
+  "preserve_master_token": true,
+  "preserve_vault_acls": true
+}
