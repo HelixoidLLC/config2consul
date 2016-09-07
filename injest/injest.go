@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"net/http"
 )
 
 type consulClient struct {
@@ -32,13 +33,14 @@ type consulConfig struct {
 func ImportPath(path string) *consulConfig {
 
 	masterConfig := consulConfig{
-		Policies: []acl{},
+		Policies: acls{},
 		KeyValue: make(map[string]string),
 	}
 
 	filename, _ := filepath.Abs(path)
 	fileInfo, _ := os.Stat(filename)
 	if fileInfo.IsDir() {
+		// TODO: read only files with *.yml extension
 		files, _ := ioutil.ReadDir(filename)
 		for _, file := range files {
 			if file.IsDir() {
@@ -78,53 +80,68 @@ func (masterConfig *consulConfig) mergeConfig(newConfig *consulConfig) {
 	}
 }
 
-func ImportConfig(config *consulConfig) {
-	consul := create()
+func ImportConfig(consConf *consulConfig) {
+	consul := create(&config.Conf)
+	importConfig(consul, consConf)
+	consul.Client = nil
+}
 
+func importConfig(consul *consulClient, config *consulConfig) error {
 	if len(config.Policies) > 0 {
-		consul.importPolicies(&config.Policies)
+		err := consul.importPolicies(&config.Policies)
+		if err != nil {
+			return err
+		}
 	} else {
 		glog.Info("No ACLs to import.")
 	}
 	if len(config.KeyValue) > 0 {
-		consul.importKeyValue(&config.KeyValue)
+		err := consul.importKeyValue(&config.KeyValue)
+		if err != nil {
+			return err
+		}
 	} else {
 		glog.Info("No KVs to import.")
 	}
-
-	consul.Client = nil
+	return nil
 }
 
-func create() *consulClient {
+func create(config *config.Config) *consulClient {
 	consul := consulClient{}
 
-	consul.Config = consulapi.DefaultConfig()
-	consul.Config.Address = config.Conf.Address
-	consul.Config.Token = config.Conf.Token
-
-	if config.Conf.Scheme == "https" {
-		consul.Config.Scheme = "https"
-		consul.configureTls()
-	}
-
-	// Get a new client
-	client, err := consulapi.NewClient(consul.Config)
-	if err != nil {
-		glog.Fatal("Can't connect to consul")
-	}
-
-	consul.Client = client
+	consul.Client = createClient(config.Address, config.Scheme, config.Token, config.CaFile, config.CertFile, config.KeyFile)
 
 	return &consul
 }
 
-func (c *consulClient) configureTls() {
+func createClient(address string, scheme string, token string, CaFile string, CertFile string, KeyFile string) *consulapi.Client {
+	//consul := consulClient{}
+
+	config := consulapi.DefaultConfig()
+	config.Address = address
+	config.Token = token
+
+	if scheme == "https" {
+		config.Scheme = "https"
+		config.HttpClient.Transport = createTlsTransport(CaFile, CertFile, KeyFile)
+	}
+
+	// Get a new client
+	client, err := consulapi.NewClient(config)
+	if err != nil {
+		glog.Fatal("Can't connect to consul")
+	}
+
+	return client
+}
+
+func createTlsTransport(CAFile string, CertFile string, KeyFile string) http.RoundTripper {
 
 	tlsClientConfig, err := consulapi.SetupTLSConfig(&consulapi.TLSConfig{
 		InsecureSkipVerify: true,
-		CAFile:             config.Conf.CaFile,
-		CertFile:           config.Conf.CertFile,
-		KeyFile:            config.Conf.KeyFile,
+		CAFile:             CAFile,
+		CertFile:           CertFile,
+		KeyFile:            KeyFile,
 	})
 
 	if err != nil {
@@ -133,5 +150,5 @@ func (c *consulClient) configureTls() {
 
 	transport := cleanhttp.DefaultPooledTransport()
 	transport.TLSClientConfig = tlsClientConfig
-	c.Config.HttpClient.Transport = transport
+	return transport
 }

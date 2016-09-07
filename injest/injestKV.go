@@ -5,6 +5,7 @@ import (
 	"github.com/golang/glog"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
+	"github.com/Sirupsen/logrus"
 )
 
 func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
@@ -44,8 +45,9 @@ func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
 		}
 	}
 
+	logrus.Info("Need to delete what wasn't defined")
 	for key := range currentKvPairs {
-		glog.Warningf("Deleting unexpected Key '%s'", key)
+		logrus.Warningf("Deleting unexpected Key '%s'", key)
 		consul.deleteKV(key)
 	}
 
@@ -90,9 +92,10 @@ func (consul *consulClient) applyKV(key string, value string, currentKVList *map
 
 func (consul *consulClient) deleteKV(key string) (bool, error) {
 	w := consulapi.WriteOptions{}
+	logrus.Info("Deleting key: " + key)
 	_, err := consul.Client.KV().Delete(key, &w)
 	if err != nil {
-		glog.Errorf("Failed to delete key: %s. %v", key, err)
+		logrus.Errorf("Failed to delete key: %s. %v", key, err)
 		return false, err
 	}
 	return true, nil

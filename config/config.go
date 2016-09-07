@@ -21,7 +21,7 @@ type Config struct {
 	CertFile string `json:"cert_file,omitempty"`
 	KeyFile  string `json:"key_file,omitempty"`
 
-	PreserveMasterToken bool `json:"preserve_master_token,omitempty"`
+	PreserveBuiltInTokens bool `json:"preserve_builtin_tokens,omitempty"`
 	PreserveVaultACLs   bool `json:"preserve_vault_acls,omitempty"`
 
 	PreserveExistingKV bool `json:"preserve_vault_acls,omitempty"`

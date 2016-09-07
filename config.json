@@ -7,6 +7,6 @@
   "cert_file": "ssl/consul_client.crt",
   "key_file": "ssl/consul_client.key",
 
-  "preserve_master_token": true,
+  "preserve_builtin_tokens": true,
   "preserve_vault_acls": true
 }
