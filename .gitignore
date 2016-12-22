@@ -2,3 +2,6 @@ ssl
 .idea
 *.iml
 vendor/github.com
+bin
+secrets/out
+*.tfstate*

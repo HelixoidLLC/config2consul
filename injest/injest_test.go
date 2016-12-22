@@ -1,3 +1,4 @@
+// +build integration
 /*
  * Copyright 2016 Igor Moochnick
  *
@@ -19,13 +20,18 @@ package injest
 import (
 	"config2consul/config"
 	"config2consul/docker_compose"
-	log "github.com/Sirupsen/logrus"
 	consulapi "github.com/hashicorp/consul/api"
 	. "github.com/smartystreets/goconvey/convey"
 	"net"
 	"net/http"
 	"testing"
 	"time"
+	"errors"
+	"path/filepath"
+	"bytes"
+	"io"
+	"crypto/tls"
+	"config2consul/log"
 )
 
 func checkIfListenningOnPort(address string) bool {
@@ -37,23 +43,55 @@ func checkIfListenningOnPort(address string) bool {
 	return true
 }
 
-func checkIfHttpAvailable(url string) bool {
-	resp, err := http.Get(url)
+func getHttpResponse(url string) (resp *http.Response, dfrFunc func(), err error) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err = client.Get(url)
+	dfrFunc = func() {
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+	}
+	return resp, dfrFunc, err
+}
+
+func checkIfHttpResponceNotEqual(url string, unwanted string) bool {
+	resp, dfrFunc, err := getHttpResponse(url)
+	if dfrFunc != nil {
+		defer dfrFunc()
+	}
 	if err != nil {
 		return false
 	}
+
 	if resp.StatusCode != 200 {
+		return false
+	}
+	var bodyBuf bytes.Buffer
+	if _, err := io.Copy(&bodyBuf, resp.Body); err != nil {
+		log.Errorf("ERROR: %v", err)
+		return false
+	}
+	response := bodyBuf.String()
+	log.Debugf("HTTP response: '%s'", response)
+	if response == unwanted {
+		log.Error("HTTP Response is empty")
 		return false
 	}
 	return true
 }
 
 func TestInjestConsul(t *testing.T) {
-	consul, deferFn := createTestProject("../testing/integration/consul_base/docker-compose.yml")
+	log.SetLevel(log.PanicLevel)
+
+	consul, deferFn, err := createTestProject("../testing/integration/consul_base/docker-compose.yml", "ssl/ca.crt", "ssl/consul_client.crt", "ssl/consul_client.key")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer deferFn()
 
-	log.SetLevel(log.PanicLevel)
-	//log.SetLevel(log.DebugLevel)
 	Convey("Controlling KV entries", t, func() {
 		Convey("A KV entry is created", func() {
 			keyPath := "aa/blah"
@@ -270,33 +308,39 @@ type consulTestClient struct {
 	client  *consulapi.Client
 }
 
-func createTestProject(projectPath string) (*consulClient, func()) {
+func createTestProject(projectPath string, CaFile string, CertFile string, KeyFile string) (*consulClient, func(), error) {
 	projectName := "testproject"
 
-	project, _ := docker_compose.NewDockerComposeProjectFromFile(projectName, projectPath)
+	project, err := docker_compose.NewDockerComposeProjectFromFile(projectName, projectPath)
+	if err != nil {
+		return nil, nil, err
+	}
 	connection, deferFn, err := project.Up()
 	if err != nil {
 		log.Fatalf("Failed to start docker project: %s", err)
+		return nil, deferFn, err
 	}
+	log.Debugf("Connection: %s", connection)
 
-	// check if container up
+	// check if Consul container up
 	if running, _ := docker_compose.IsRunning(projectName, "consul"); !running {
-		log.Fatalf("Container is not running. Aborting ...")
+		log.Fatalf("Consul Container is not running. Aborting ...")
+		return nil, deferFn, errors.New("Container is not running. Aborting ...")
 	}
 
 	// TODO: define an exit timeout
-	for ok := false; !ok; ok = checkIfHttpAvailable("http://" + connection + ":8500/v1/status/leader") {
+	// TODO: externalize ports and scheme
+	for ok := false; !ok; ok = checkIfHttpResponceNotEqual("https://" + connection + ":8501/v1/status/leader", "\"\"") {
+		log.Debug("Waiting on HTTP connection https://" + connection + ":8501/v1/status/leader")
 		time.Sleep(500 * time.Millisecond)
-		//ok = checkIfListenningOnPort(connection + ":8500")
-		//ok = checkIfHttpAvailable("http://" + connection + ":8500/v1/status/leader")
 	}
-	// Just wait a bit to let Consul to start
-	time.Sleep(2 * time.Second)
 
 	consul := consulClient{}
-	consul.Client = createClient(connection+":8501", "https", "a49e7360-f150-463a-9a29-3eb186ffae1a", "../ssl/ca.crt", "../ssl/consul_client.crt", "../ssl/consul_client.key")
+	dir := filepath.Dir(projectPath)
 
-	return &consul, deferFn
+	consul.Client = createClient(connection+":8501", "https", "a49e7360-f150-463a-9a29-3eb186ffae1a", filepath.Join(dir, CaFile), filepath.Join(dir, CertFile), filepath.Join(dir, KeyFile))
+
+	return &consul, deferFn, nil
 }
 
 func CreateKV(t *testing.T, consul *consulClient, keyPath string, value []byte) {

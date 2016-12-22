@@ -3,12 +3,42 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "EW7pCyyPlX6ClWTC2yOxagQbtRA=",
+			"path": "github.com/blang/semver",
+			"revision": "3a37c301dda64cbe17f16f661b4c976803c0e2d2",
+			"revisionTime": "2016-11-30T00:12:39Z"
+		},
+		{
 			"checksumSHA1": "XQUk9Cto6wjVA4h/VwanNlqdhdQ=",
 			"path": "github.com/docker/libcompose",
 			"revision": "c10fa1d7ef4e0fe05b2bc9ca7444ea421b1df236",
 			"revisionTime": "2016-08-09T12:04:32Z",
 			"version": "v0.3.0",
 			"versionExact": "v0.3.0"
+		},
+		{
+			"checksumSHA1": "3h31Z/gjoSPQhaVeyT1gA81iGFQ=",
+			"path": "github.com/fabric8io/gobump",
+			"revision": "f98343755a063d1c99db86ebd9b354e24350556b",
+			"revisionTime": "2015-10-19T08:02:36Z"
+		},
+		{
+			"checksumSHA1": "40vJyUB4ezQSn/NSadsKEOrudMc=",
+			"path": "github.com/inconshreveable/mousetrap",
+			"revision": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75",
+			"revisionTime": "2014-10-17T20:07:13Z"
+		},
+		{
+			"checksumSHA1": "2bLk/+qSRrzctGuDCiCPygXbUQQ=",
+			"path": "github.com/spf13/cobra",
+			"revision": "de09d9ce07d0d8a74442cfeaa91628cf9492cc23",
+			"revisionTime": "2016-12-22T15:12:50Z"
+		},
+		{
+			"checksumSHA1": "AxfxmmBpbjQoaQKXbERcEw9pv+U=",
+			"path": "github.com/spf13/pflag",
+			"revision": "25f8b5b07aece3207895bf19f7ab517eb3b22a40",
+			"revisionTime": "2016-12-14T04:49:49Z"
 		}
 	],
 	"rootPath": "config2consul"
