@@ -17,7 +17,7 @@
 package docker_compose
 
 import (
-	"config2vault/log"
+	"config2consul/log"
 	"fmt"
 	"net/url"
 	"os"
@@ -126,6 +126,7 @@ func (pr *DockerComposeProject) Up() (string, func(), error) {
 
 	// Leave images behind for debug purposes
 	if log.GetLevel() == log.DebugLevel {
+		log.Debug("Will leave test container behind ...")
 		removeVolume = false
 		removeOrphans = false
 		removeImages = "none"

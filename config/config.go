@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/golang/glog"
+	"config2consul/log"
 	"io/ioutil"
 )
 
@@ -69,7 +69,7 @@ func ReadConfig() error {
 	}
 	err = json.Unmarshal(configFile, &Conf)
 	if err != nil {
-		glog.Errorf("Failed to load config file: %v", err)
+		log.Errorf("Failed to load config file: %v", err)
 	}
 
 	return nil

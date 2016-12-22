@@ -20,9 +20,9 @@ import (
 	"config2consul/config"
 	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
+	"config2consul/log"
 )
 
 func (consul *consulClient) getCurrentAcls1() (*map[string]string, error) {
@@ -36,7 +36,7 @@ func (consul *consulClient) getCurrentAcls1() (*map[string]string, error) {
 
 	for _, acl := range aclEntry {
 		//if _, ok := currentAcls[acl.Name]; ok {
-		//	glog.Warning("Found duplicate ACL name: " + acl.Name)
+		//	log.Warning("Found duplicate ACL name: " + acl.Name)
 		//}
 		currentAcls[acl.ID] = acl.Name
 	}

@@ -18,8 +18,7 @@ package injest
 
 import (
 	"config2consul/config"
-	log "github.com/Sirupsen/logrus"
-	"github.com/golang/glog"
+	"config2consul/log"
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-cleanhttp"
 	"gopkg.in/yaml.v2"
@@ -77,14 +76,14 @@ func ImportFile(filename string, masterConfig *consulConfig) {
 	log.Info("Loading file: " + filename)
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatal(err)
 	}
 
 	var config consulConfig
 
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatal(err)
 	}
 
 	masterConfig.mergeConfig(&config)
@@ -110,7 +109,7 @@ func importConfig(consul *consulClient, config *consulConfig) error {
 			return err
 		}
 	} else {
-		glog.Info("No ACLs to import.")
+		log.Info("No ACLs to import.")
 	}
 	if len(config.KeyValue) > 0 {
 		err := consul.importKeyValue(&config.KeyValue)
@@ -118,7 +117,7 @@ func importConfig(consul *consulClient, config *consulConfig) error {
 			return err
 		}
 	} else {
-		glog.Info("No KVs to import.")
+		log.Info("No KVs to import.")
 	}
 	return nil
 }
@@ -146,7 +145,7 @@ func createClient(address string, scheme string, token string, CaFile string, Ce
 	// Get a new client
 	client, err := consulapi.NewClient(config)
 	if err != nil {
-		glog.Fatal("Can't connect to consul")
+		log.Fatal("Can't connect to consul")
 	}
 
 	return client

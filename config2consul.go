@@ -21,8 +21,8 @@ import (
 	"config2consul/injest"
 	"flag"
 	"fmt"
-	"github.com/golang/glog"
 	"os"
+	"config2consul/log"
 	"runtime"
 )
 
@@ -47,13 +47,13 @@ func main() {
 		os.Exit(-1)
 	}
 
-	glog.Info("Starting config2consul v" + version)
-	glog.Info("Connecting to Consul at: " + config.Conf.Address)
+	log.Info("Starting config2consul v" + version)
+	log.Info("Connecting to Consul at: " + config.Conf.Address)
 
 	if len(flag.Args()) == 0 {
-		glog.Fatal("Missing path to the ACLs file")
+		log.Fatal("Missing path to the ACLs file")
 	}
-	glog.Info("Applying ACLs from " + flag.Args()[0])
+	log.Info("Applying ACLs from " + flag.Args()[0])
 
 	injest.ImportConfig(injest.ImportPath(flag.Args()[0]))
 }

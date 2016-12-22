@@ -18,10 +18,9 @@ package injest
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
-	"github.com/golang/glog"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
+	"config2consul/log"
 )
 
 func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
@@ -30,7 +29,7 @@ func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
 	currentKvPairsOrig, _, _ := consul.Client.KV().List("", &q)
 	currentKvPairs := map[string]string{}
 	for _, kv := range currentKvPairsOrig {
-		glog.Infof("%s: %d", kv.Key, kv.CreateIndex)
+		log.Infof("%s: %d", kv.Key, kv.CreateIndex)
 		// TODO: Value is byte[] - deal with it
 		currentKvPairs[kv.Key] = string(kv.Value)
 	}
@@ -38,14 +37,14 @@ func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
 	for key, value := range *keyValue {
 		if key[len(key)-1] == '/' {
 			if value == "${ignore}" {
-				glog.Info("Ignoring tree: " + key)
+				log.Info("Ignoring tree: " + key)
 				for k := range currentKvPairs {
 					if strings.HasPrefix(k, key) {
 						delete(currentKvPairs, k)
 					}
 				}
 			} else {
-				glog.Error("Unexpected value for the key tree: " + key)
+				log.Error("Unexpected value for the key tree: " + key)
 				return errors.New("Unexpected value the key tree: " + key)
 			}
 		} else {
@@ -61,9 +60,9 @@ func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
 		}
 	}
 
-	logrus.Info("Need to delete what wasn't defined")
+	log.Info("Need to delete what wasn't defined")
 	for key := range currentKvPairs {
-		logrus.Warningf("Deleting unexpected Key '%s'", key)
+		log.Warningf("Deleting unexpected Key '%s'", key)
 		consul.deleteKV(key)
 	}
 
@@ -78,7 +77,7 @@ func (consul *consulClient) applyKV(key string, value string, currentKVList *map
 			return true, nil
 		}
 
-		glog.Warningf("Found unexpected value of key %s. Overwriting ...", key)
+		log.Warningf("Found unexpected value of key %s. Overwriting ...", key)
 
 		kv := consulapi.KVPair{
 			Key:   key,
@@ -86,7 +85,7 @@ func (consul *consulClient) applyKV(key string, value string, currentKVList *map
 		}
 		_, err := consul.Client.KV().Put(&kv, &w)
 		if err != nil {
-			glog.Error("Failed to update key: " + key)
+			log.Error("Failed to update key: " + key)
 			return false, errors.New("Failed to update key: " + key)
 		}
 		return true, nil
@@ -99,7 +98,7 @@ func (consul *consulClient) applyKV(key string, value string, currentKVList *map
 	}
 	_, err := consul.Client.KV().Put(&kv, &w)
 	if err != nil {
-		glog.Error("Failed to update key: " + key)
+		log.Error("Failed to update key: " + key)
 		return false, errors.New("Failed to update key: " + key)
 	}
 
@@ -108,10 +107,10 @@ func (consul *consulClient) applyKV(key string, value string, currentKVList *map
 
 func (consul *consulClient) deleteKV(key string) (bool, error) {
 	w := consulapi.WriteOptions{}
-	logrus.Info("Deleting key: " + key)
+	log.Info("Deleting key: " + key)
 	_, err := consul.Client.KV().Delete(key, &w)
 	if err != nil {
-		logrus.Errorf("Failed to delete key: %s. %v", key, err)
+		log.Errorf("Failed to delete key: %s. %v", key, err)
 		return false, err
 	}
 	return true, nil
