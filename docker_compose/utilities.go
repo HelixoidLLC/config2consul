@@ -1,18 +1,36 @@
+/*
+ * Copyright 2016 Igor Moochnick
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package docker_compose
 
 import (
+	"config2vault/log"
 	"fmt"
-	"github.com/docker/libcompose/docker"
-	lclient "github.com/docker/libcompose/docker/client"
-	"github.com/docker/libcompose/docker/container"
-	"github.com/docker/libcompose/project"
-	"github.com/docker/libcompose/project/options"
-	"golang.org/x/net/context"
-	"log"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/docker/libcompose/docker"
+	lclient "github.com/docker/libcompose/docker/client"
+	"github.com/docker/libcompose/docker/container"
+	"github.com/docker/libcompose/docker/ctx"
+	"github.com/docker/libcompose/project"
+	"github.com/docker/libcompose/project/options"
+	"golang.org/x/net/context"
 )
 
 type ContainerInfo struct {
@@ -23,7 +41,7 @@ type ContainerInfo struct {
 
 type DockerComposeProject struct {
 	project project.APIProject
-	context docker.Context
+	context ctx.Context
 	Name    string
 }
 
@@ -32,7 +50,7 @@ type DockerContainer struct {
 	container interface{}
 }
 
-func newDockerComposeProject(project project.APIProject, context docker.Context) DockerComposeProject {
+func newDockerComposeProject(project project.APIProject, context ctx.Context) DockerComposeProject {
 	return DockerComposeProject{
 		project: project,
 		context: context,
@@ -44,10 +62,10 @@ func (pr *DockerComposeProject) ProjectName() string {
 }
 
 func GetDockerHostIP() string {
-	//DOCKER_CERT_PATH=/Users/{username}/.docker/machine/machines/dev
-	//DOCKER_HOST=tcp://192.168.99.100:2376
-	//DOCKER_MACHINE_NAME=dev
-	//DOCKER_TLS_VERIFY=1
+	// DOCKER_CERT_PATH
+	// DOCKER_HOST
+	// DOCKER_MACHINE_NAME
+	// DOCKER_TLS_VERIFY
 	env_docker_host := os.Getenv("DOCKER_HOST")
 	if env_docker_host == "" {
 		return ""
@@ -61,7 +79,7 @@ func GetDockerHostIP() string {
 }
 
 func NewDockerComposeProjectFromString(composeProject string, t *testing.T) (*DockerComposeProject, error) {
-	context := docker.Context{
+	context := ctx.Context{
 		Context: project.Context{
 			ComposeBytes: [][]byte{[]byte(composeProject)},
 			ProjectName:  "test-project",
@@ -78,7 +96,7 @@ func NewDockerComposeProjectFromString(composeProject string, t *testing.T) (*Do
 }
 
 func NewDockerComposeProjectFromFile(projectName string, composeFilePath string) (*DockerComposeProject, error) {
-	context := docker.Context{
+	context := ctx.Context{
 		Context: project.Context{
 			ComposeFiles: []string{composeFilePath},
 			ProjectName:  projectName,
@@ -87,7 +105,8 @@ func NewDockerComposeProjectFromFile(projectName string, composeFilePath string)
 	pr, err := docker.NewProject(&context, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return nil, err
 	}
 
 	dpr := newDockerComposeProject(pr, context)
@@ -101,14 +120,22 @@ func (pr *DockerComposeProject) Up() (string, func(), error) {
 		log.Fatal(err)
 	}
 
+	removeVolume := true
+	removeOrphans := true
+	removeImages := options.ImageType("local")
+
+	// Leave images behind for debug purposes
+	if log.GetLevel() == log.DebugLevel {
+		removeVolume = false
+		removeOrphans = false
+		removeImages = "none"
+	}
+
 	dfrFunc := func() {
 		pr.project.Down(context.Background(), options.Down{
-			//RemoveVolume:  false,
-			//RemoveOrphans: false,
-			//RemoveImages:  "none",
-			RemoveVolume:  true,
-			RemoveOrphans: true,
-			RemoveImages:  "local",
+			RemoveVolume:  removeVolume,
+			RemoveOrphans: removeOrphans,
+			RemoveImages:  removeImages,
 		})
 	}
 
@@ -122,6 +149,9 @@ func IsRunning(projectName string, containerName string) (bool, error) {
 	container, err := container.Get(context.Background(), client, name)
 	if err != nil {
 		return false, err
+	}
+	if container == nil {
+		return false, nil
 	}
 
 	return container.State.Running, nil

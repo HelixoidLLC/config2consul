@@ -1,0 +1,15 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "XQUk9Cto6wjVA4h/VwanNlqdhdQ=",
+			"path": "github.com/docker/libcompose",
+			"revision": "c10fa1d7ef4e0fe05b2bc9ca7444ea421b1df236",
+			"revisionTime": "2016-08-09T12:04:32Z",
+			"version": "v0.3.0",
+			"versionExact": "v0.3.0"
+		}
+	],
+	"rootPath": "config2consul"
+}
