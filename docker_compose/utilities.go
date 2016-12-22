@@ -2,33 +2,33 @@ package docker_compose
 
 import (
 	"fmt"
+	"github.com/docker/libcompose/docker"
 	lclient "github.com/docker/libcompose/docker/client"
 	"github.com/docker/libcompose/docker/container"
 	"github.com/docker/libcompose/project"
 	"github.com/docker/libcompose/project/options"
-	"log"
-	"github.com/docker/libcompose/docker"
 	"golang.org/x/net/context"
-	"os"
+	"log"
 	"net/url"
-	"testing"
+	"os"
 	"strings"
+	"testing"
 )
 
 type ContainerInfo struct {
-	ID string
-	State string
+	ID     string
+	State  string
 	Status string
 }
 
 type DockerComposeProject struct {
 	project project.APIProject
 	context docker.Context
-	Name string
+	Name    string
 }
 
 type DockerContainer struct {
-	project *DockerComposeProject
+	project   *DockerComposeProject
 	container interface{}
 }
 
@@ -81,7 +81,7 @@ func NewDockerComposeProjectFromFile(projectName string, composeFilePath string)
 	context := docker.Context{
 		Context: project.Context{
 			ComposeFiles: []string{composeFilePath},
-			ProjectName: projectName,
+			ProjectName:  projectName,
 		},
 	}
 	pr, err := docker.NewProject(&context, nil)

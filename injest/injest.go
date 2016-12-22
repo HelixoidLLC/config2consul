@@ -2,14 +2,15 @@ package injest
 
 import (
 	"config2consul/config"
+	log "github.com/Sirupsen/logrus"
 	"github.com/golang/glog"
 	consulapi "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-cleanhttp"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
-	"net/http"
 )
 
 type consulClient struct {
@@ -57,7 +58,7 @@ func ImportPath(path string) *consulConfig {
 }
 
 func ImportFile(filename string, masterConfig *consulConfig) {
-	glog.Info("Loading file: " + filename)
+	log.Info("Loading file: " + filename)
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		glog.Fatal(err)

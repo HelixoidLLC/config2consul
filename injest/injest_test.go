@@ -1,15 +1,15 @@
 package injest
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
-	"testing"
-	consulapi "github.com/hashicorp/consul/api"
-	"config2consul/docker_compose"
-	"net"
-	"time"
-	"net/http"
-	log "github.com/Sirupsen/logrus"
 	"config2consul/config"
+	"config2consul/docker_compose"
+	log "github.com/Sirupsen/logrus"
+	consulapi "github.com/hashicorp/consul/api"
+	. "github.com/smartystreets/goconvey/convey"
+	"net"
+	"net/http"
+	"testing"
+	"time"
 )
 
 func checkIfListenningOnPort(address string) bool {
@@ -125,8 +125,8 @@ key "" {
 			configData := consulConfig{
 				Policies: acls{
 					acl{
-						Name: aclName,
-						Type: aclType,
+						Name:  aclName,
+						Type:  aclType,
 						Rules: aclRules,
 					},
 				},
@@ -150,13 +150,13 @@ key "" {
 			configData := consulConfig{
 				Policies: acls{
 					acl{
-						Name: aclName,
-						Type: aclType,
+						Name:  aclName,
+						Type:  aclType,
 						Rules: aclRules,
 					},
 					acl{
-						Name: aclName,
-						Type: aclType,
+						Name:  aclName,
+						Type:  aclType,
 						Rules: aclRules,
 					},
 				},
@@ -177,8 +177,8 @@ key "" {
 			configData := consulConfig{
 				Policies: acls{
 					acl{
-						Name: aclName,
-						Type: aclType,
+						Name:  aclName,
+						Type:  aclType,
 						Rules: aclRules,
 					},
 				},
@@ -204,8 +204,8 @@ key "" {
 			configData := consulConfig{
 				Policies: acls{
 					acl{
-						Name: aclName,
-						Type: aclType,
+						Name:  aclName,
+						Type:  aclType,
 						Rules: aclRules,
 					},
 				},
@@ -223,16 +223,16 @@ key "" {
 			configData := consulConfig{
 				Policies: acls{
 					acl{
-						Name: "Master Token",
+						Name:  "Master Token",
 						Rules: "${ignore}",
 					},
 					acl{
-						Name: "Anonymous Token",
+						Name:  "Anonymous Token",
 						Rules: "${ignore}",
 					},
 					acl{
-						Name: aclName,
-						Type: aclType,
+						Name:  aclName,
+						Type:  aclType,
 						Rules: "${ignore}",
 					},
 				},
@@ -251,7 +251,7 @@ key "" {
 
 type consulTestClient struct {
 	address string
-	client *consulapi.Client
+	client  *consulapi.Client
 }
 
 func createTestProject(projectPath string) (*consulClient, func()) {
@@ -278,7 +278,7 @@ func createTestProject(projectPath string) (*consulClient, func()) {
 	time.Sleep(2 * time.Second)
 
 	consul := consulClient{}
-	consul.Client = createClient(connection + ":8501", "https", "a49e7360-f150-463a-9a29-3eb186ffae1a", "../ssl/ca.crt", "../ssl/consul_client.crt", "../ssl/consul_client.key")
+	consul.Client = createClient(connection+":8501", "https", "a49e7360-f150-463a-9a29-3eb186ffae1a", "../ssl/ca.crt", "../ssl/consul_client.crt", "../ssl/consul_client.key")
 
 	return &consul, deferFn
 }

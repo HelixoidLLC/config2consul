@@ -2,10 +2,10 @@ package injest
 
 import (
 	"errors"
+	"github.com/Sirupsen/logrus"
 	"github.com/golang/glog"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
-	"github.com/Sirupsen/logrus"
 )
 
 func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {

@@ -3,10 +3,10 @@ package injest
 import (
 	"config2consul/config"
 	"errors"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
-	log "github.com/Sirupsen/logrus"
-	"fmt"
 )
 
 func (consul *consulClient) getCurrentAcls1() (*map[string]string, error) {

@@ -22,7 +22,7 @@ type Config struct {
 	KeyFile  string `json:"key_file,omitempty"`
 
 	PreserveBuiltInTokens bool `json:"preserve_builtin_tokens,omitempty"`
-	PreserveVaultACLs   bool `json:"preserve_vault_acls,omitempty"`
+	PreserveVaultACLs     bool `json:"preserve_vault_acls,omitempty"`
 
 	PreserveExistingKV bool `json:"preserve_vault_acls,omitempty"`
 }

@@ -1,5 +1,5 @@
 consul:
-  image: docker.infra.csdops.net:5000/consul:v0.6.4
+  image: consul:v0.6.4
   volumes:
     - ./config.json:/consul/config.json
     - ./ssl:/consul/ssl
