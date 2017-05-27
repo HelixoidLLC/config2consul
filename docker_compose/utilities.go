@@ -75,6 +75,9 @@ func GetDockerHostIP() string {
 		return ""
 	}
 	parts := strings.Split(docker_host.Host, ":")
+	if parts[0] == "" {
+		return "localhost"
+	}
 	return parts[0]
 }
 

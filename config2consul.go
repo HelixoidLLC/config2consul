@@ -19,14 +19,14 @@ package main
 import (
 	"config2consul/config"
 	"config2consul/injest"
+	"config2consul/log"
 	"flag"
 	"fmt"
 	"os"
-	"config2consul/log"
 	"runtime"
 )
 
-const version = "0.0.9"
+const version = "0.0.10"
 
 var versionFlag bool
 

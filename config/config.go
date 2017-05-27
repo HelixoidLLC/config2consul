@@ -17,10 +17,10 @@
 package config
 
 import (
+	"config2consul/log"
 	"encoding/json"
 	"errors"
 	"flag"
-	"config2consul/log"
 	"io/ioutil"
 )
 

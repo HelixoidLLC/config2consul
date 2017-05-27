@@ -1,5 +1,5 @@
 consul:
-  image: consul:v0.6.4
+  image: consul:0.7.5
   volumes:
     - ./config.json:/consul/config.json
     - ./ssl:/consul/ssl
@@ -14,6 +14,4 @@ consul:
     - 53:8600/tcp   # DNS Interface
     - 53:8600/udp   # DNS Interface
 #    container_name: consul
-#  hostname: "consul00.infra.csdops.net"
-  command: "agent -server -config-file=/consul/config.json -node consul -bootstrap-expect 1 -bind 0.0.0.0 -client 0.0.0.0" # -advertise 192.168.99.100"
-#  command: ls
+  command: "agent -server -config-file=/consul/config.json -node consul -bootstrap-expect 1 -bind 0.0.0.0 -client 0.0.0.0 -ui" # -advertise 192.168.99.100"

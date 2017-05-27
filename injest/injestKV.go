@@ -17,42 +17,85 @@
 package injest
 
 import (
+	"config2consul/log"
 	"errors"
+	"fmt"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
-	"config2consul/log"
 )
 
-func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
+func (consul *consulClient) importKeyValue(keyValue *map[string]interface{}) error {
 	q := consulapi.QueryOptions{}
 	// TODO: preserve more information, like "Index"
 	currentKvPairsOrig, _, _ := consul.Client.KV().List("", &q)
-	currentKvPairs := map[string]string{}
+	currentKvPairs := make(map[string]string)
 	for _, kv := range currentKvPairsOrig {
-		log.Infof("%s: %d", kv.Key, kv.CreateIndex)
-		// TODO: Value is byte[] - deal with it
+		log.Infof("Found %s: %d", kv.Key, kv.CreateIndex)
 		currentKvPairs[kv.Key] = string(kv.Value)
 	}
 
-	for key, value := range *keyValue {
+	err := consul.importTree(keyValue, currentKvPairs)
+	if err != nil {
+		return err
+	}
+
+	if len(currentKvPairs) > 0 {
+		log.Infof("Deleting %d runaway key pairs", len(currentKvPairs))
+		for key := range currentKvPairs {
+			log.Warningf("Deleting runaway Key '%s'", key)
+			consul.deleteKV(key)
+		}
+	}
+
+	return nil
+}
+
+func (consul *consulClient) importTree(keyValue *map[string]interface{}, currentKvPairs map[string]string) error {
+
+	for key, i_value := range *keyValue {
+		if len(key) == 0 {
+			log.Error("Got empty key in the K/V collection.")
+			continue
+		}
 		if key[len(key)-1] == '/' {
-			if value == "${ignore}" {
-				log.Info("Ignoring tree: " + key)
-				for k := range currentKvPairs {
-					if strings.HasPrefix(k, key) {
-						delete(currentKvPairs, k)
+			switch value := i_value.(type) {
+			case string:
+				if value == "${ignore}" {
+					log.Info("Ignoring tree: " + key)
+					for k := range currentKvPairs {
+						if strings.HasPrefix(k, key) {
+							delete(currentKvPairs, k)
+						}
 					}
+				} else {
+					err_text := fmt.Sprintf("Unexpected string value for the key tree '%s' of type: %s", key, value)
+					log.Error(err_text)
+					return errors.New(err_text)
 				}
-			} else {
-				log.Error("Unexpected value for the key tree: " + key)
-				return errors.New("Unexpected value the key tree: " + key)
+			case map[interface{}]interface{}:
+
+				map_value := convert_map(&value, key)
+
+				log.Debugf("Importing tree %s", key)
+				consul.importTree(map_value, currentKvPairs)
+			default:
+				err_text := fmt.Sprintf("Unexpected value for the key tree '%s' of type: %T", key, i_value)
+				log.Error(err_text)
+				return errors.New(err_text)
 			}
 		} else {
+			str_value, ok := get_string_value(i_value)
+			if !ok {
+				err_text := fmt.Sprintf("Unexpected value for the key '%s': %T", key, i_value)
+				log.Error(err_text)
+				return errors.New(err_text)
+			}
+
 			var done bool
-			if value == "${ignore}" {
+			if str_value == "${ignore}" {
 				done = true
 			} else {
-				done, _ = consul.applyKV(key, value, &currentKvPairs)
+				done, _ = consul.applyKV(key, str_value, &currentKvPairs)
 			}
 			if done {
 				delete(currentKvPairs, key)
@@ -60,13 +103,40 @@ func (consul *consulClient) importKeyValue(keyValue *map[string]string) error {
 		}
 	}
 
-	log.Info("Need to delete what wasn't defined")
-	for key := range currentKvPairs {
-		log.Warningf("Deleting unexpected Key '%s'", key)
-		consul.deleteKV(key)
+	return nil
+}
+
+func get_string_value(value interface{}) (string, bool) {
+	str_value := ""
+	switch value := value.(type) {
+	case string:
+		str_value = value
+	case *string:
+		str_value = *value
+	default:
+		return "", false
 	}
 
-	return nil
+	return str_value, true
+}
+
+func convert_map(input *map[interface{}]interface{}, path_prefix string) *map[string]interface{} {
+	output := make(map[string]interface{})
+
+	for key, value := range *input {
+		switch key := key.(type) {
+		case string:
+			key_path := path_prefix + key
+			switch value := value.(type) {
+			case string:
+				output[key_path] = value
+			default:
+				output[key_path+"/"] = value
+			}
+		}
+	}
+
+	return &output
 }
 
 func (consul *consulClient) applyKV(key string, value string, currentKVList *map[string]string) (bool, error) {
@@ -77,29 +147,18 @@ func (consul *consulClient) applyKV(key string, value string, currentKVList *map
 			return true, nil
 		}
 
-		log.Warningf("Found unexpected value of key %s. Overwriting ...", key)
-
-		kv := consulapi.KVPair{
-			Key:   key,
-			Value: []byte(value),
-		}
-		_, err := consul.Client.KV().Put(&kv, &w)
-		if err != nil {
-			log.Error("Failed to update key: " + key)
-			return false, errors.New("Failed to update key: " + key)
-		}
-		return true, nil
+		log.Warningf("Value of key %s has been changed. Overwriting ...", key)
 	}
 
-	// TODO: DRI
 	kv := consulapi.KVPair{
 		Key:   key,
 		Value: []byte(value),
 	}
 	_, err := consul.Client.KV().Put(&kv, &w)
 	if err != nil {
-		log.Error("Failed to update key: " + key)
-		return false, errors.New("Failed to update key: " + key)
+		err_text := fmt.Sprintf("#2 Failed to update key '%s' with value '%s'. %#v", key, value, err)
+		log.Error(err_text)
+		return false, errors.New(err_text)
 	}
 
 	return true, nil

@@ -42,15 +42,15 @@ type acl struct {
 type acls []acl
 
 type consulConfig struct {
-	Policies acls              `yaml:"policies,omitempty"`
-	KeyValue map[string]string `yaml:"kv,omitempty"`
+	Policies acls                   `yaml:"policies,omitempty"`
+	KeyValue map[string]interface{} `yaml:"kv,omitempty"`
 }
 
 func ImportPath(path string) *consulConfig {
 
 	masterConfig := consulConfig{
 		Policies: acls{},
-		KeyValue: make(map[string]string),
+		KeyValue: make(map[string]interface{}),
 	}
 
 	filename, _ := filepath.Abs(path)

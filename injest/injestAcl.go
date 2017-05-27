@@ -18,11 +18,11 @@ package injest
 
 import (
 	"config2consul/config"
+	"config2consul/log"
 	"errors"
 	"fmt"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
-	"config2consul/log"
 )
 
 func (consul *consulClient) getCurrentAcls1() (*map[string]string, error) {
