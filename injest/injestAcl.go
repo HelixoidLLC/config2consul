@@ -104,6 +104,10 @@ func (consul *consulClient) importPolicies(newACLs *acls) error {
 
 	// Purging the rest of the values
 	for name, id := range uniqueValues {
+		if name == "Master Token" {
+			log.Info("Leaving Master Token intact.")
+			continue
+		}
 		log.Warningf("Deleting unexpected ACL '%s' with ID: %s", name, id)
 		consul.deleteAcl(id)
 	}

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	consulapi "github.com/hashicorp/consul/api"
 	"strings"
+	"strconv"
 )
 
 func (consul *consulClient) importKeyValue(keyValue *map[string]interface{}) error {
@@ -30,7 +31,7 @@ func (consul *consulClient) importKeyValue(keyValue *map[string]interface{}) err
 	currentKvPairsOrig, _, _ := consul.Client.KV().List("", &q)
 	currentKvPairs := make(map[string]string)
 	for _, kv := range currentKvPairsOrig {
-		log.Infof("Found %s: %d", kv.Key, kv.CreateIndex)
+		log.Debugf("Found %s: %d", kv.Key, kv.CreateIndex)
 		currentKvPairs[kv.Key] = string(kv.Value)
 	}
 
@@ -113,6 +114,14 @@ func get_string_value(value interface{}) (string, bool) {
 		str_value = value
 	case *string:
 		str_value = *value
+	case bool:
+		str_value = strconv.FormatBool(value)
+	case int:
+		str_value = strconv.Itoa(value)
+	case uint:
+		str_value = fmt.Sprintf("%d", value)
+	case float32, float64:
+		str_value = fmt.Sprintf("%g", value)
 	default:
 		return "", false
 	}

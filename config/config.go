@@ -27,7 +27,6 @@ import (
 // Config represents the configuration information.
 type Config struct {
 	//Debug bool   `json:"debug"`
-	//Token string `json:"token"`
 	Path    string `json:"path,omitempty"`
 	Address string `json:"address,omitempty"`
 	Scheme  string `json:"scheme,omitempty"`
@@ -56,9 +55,11 @@ var Conf Config
 //}
 
 var configPath string
+var consulToken string
 
 func init() {
 	flag.StringVar(&configPath, "config", "./config.json", "path to the config file")
+	flag.StringVar(&consulToken, "token", "", "Consul token")
 }
 
 func ReadConfig() error {
@@ -70,6 +71,9 @@ func ReadConfig() error {
 	err = json.Unmarshal(configFile, &Conf)
 	if err != nil {
 		log.Errorf("Failed to load config file: %v", err)
+	}
+	if (consulToken != "") {
+	    Conf.Token = consulToken
 	}
 
 	return nil

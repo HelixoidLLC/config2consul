@@ -31,6 +31,39 @@ func TestInjestKV(t *testing.T) {
 			So(string(result.Value), ShouldEqual, value)
 		})
 
+		Convey("A boolean KV entry is created as string", func() {
+			keyPath := "aa/blah"
+			value := true
+			configData := consulConfig{
+				KeyValue: map[string]interface{}{
+					keyPath: value,
+				},
+			}
+			importConfig(consul, &configData)
+
+			result := GetValue(t, consul, keyPath)
+
+			So(string(result.Value), ShouldEqual, "true")
+		})
+
+		Convey("An integer KV entry is created as string", func() {
+			keyPath1 := "aa/key1"
+			keyPath2 := "aa/key2"
+			keyPath3 := "aa/key3"
+			configData := consulConfig{
+				KeyValue: map[string]interface{}{
+					keyPath1: 123,
+					keyPath2: -123,
+					keyPath3: 1.23,
+				},
+			}
+			importConfig(consul, &configData)
+
+			So(string(GetValue(t, consul, keyPath1).Value), ShouldEqual, "123")
+			So(string(GetValue(t, consul, keyPath2).Value), ShouldEqual, "-123")
+			So(string(GetValue(t, consul, keyPath3).Value), ShouldEqual, "1.23")
+		})
+
 		Convey("A KV is overwritten if existed", func() {
 			keyPath := "bb/blah"
 			value := "foo"
